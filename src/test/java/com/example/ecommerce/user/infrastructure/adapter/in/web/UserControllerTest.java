@@ -1,6 +1,7 @@
 package com.example.ecommerce.user.infrastructure.adapter.in.web;
 
 import com.example.ecommerce.user.application.port.in.AuthenticateUserUseCase;
+import com.example.ecommerce.user.application.port.in.RefreshTokenUseCase;
 import com.example.ecommerce.user.application.port.in.RegisterUserUseCase;
 import com.example.ecommerce.user.domain.model.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +29,9 @@ class UserControllerTest {
 
     @Mock
     private AuthenticateUserUseCase authenticateUserUseCase;
+
+    @Mock
+    private RefreshTokenUseCase refreshTokenUseCase;
 
     @InjectMocks
     private UserController userController;
@@ -64,9 +68,11 @@ class UserControllerTest {
         // Arrange
         String email = "test@example.com";
         String password = "password123";
-        String token = "dummy-token";
+        String accessToken = "access-token";
+        String refreshToken = "refresh-token";
 
-        when(authenticateUserUseCase.authenticate(anyString(), anyString())).thenReturn(token);
+        when(authenticateUserUseCase.authenticate(anyString(), anyString()))
+                .thenReturn(new AuthenticateUserUseCase.TokenPair(accessToken, refreshToken, 86400000L));
 
         String requestBody = "{\"email\":\"" + email + "\", \"password\":\"" + password + "\"}";
 
@@ -75,6 +81,7 @@ class UserControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value(token));
+                .andExpect(jsonPath("$.accessToken").value(accessToken))
+                .andExpect(jsonPath("$.refreshToken").value(refreshToken));
     }
 }

@@ -1,5 +1,7 @@
 package com.example.ecommerce.user.application.service;
 
+import com.example.ecommerce.user.application.port.in.AuthenticateUserUseCase;
+import com.example.ecommerce.user.application.port.out.JWTProviderPort;
 import com.example.ecommerce.user.application.port.out.PasswordEncoderPort;
 import com.example.ecommerce.user.application.port.out.UserRepositoryPort;
 import com.example.ecommerce.user.domain.exception.AuthenticationException;
@@ -10,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
 
@@ -26,11 +29,15 @@ class UserServiceTest {
     @Mock
     private PasswordEncoderPort passwordEncoderPort;
 
+    @Mock
+    private JWTProviderPort jwtProviderPort;
+
     private UserService userService;
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userRepositoryPort, passwordEncoderPort);
+        userService = new UserService(userRepositoryPort, passwordEncoderPort, jwtProviderPort);
+        ReflectionTestUtils.setField(userService, "jwtExpiration", 86400000L);
     }
 
     @Test
@@ -84,17 +91,22 @@ class UserServiceTest {
         String email = "test@example.com";
         String rawPassword = "password123";
         String encodedPassword = "encodedPassword";
+        String accessToken = "accessToken";
+        String refreshToken = "refreshToken";
         User user = new User(1L, email, encodedPassword);
 
         when(userRepositoryPort.findByEmail(email)).thenReturn(Optional.of(user));
         when(passwordEncoderPort.matches(rawPassword, encodedPassword)).thenReturn(true);
+        when(jwtProviderPort.generateToken(email, 1L)).thenReturn(accessToken);
+        when(jwtProviderPort.generateRefreshToken(email, 1L)).thenReturn(refreshToken);
 
         // Act
-        String token = userService.authenticate(email, rawPassword);
+        AuthenticateUserUseCase.TokenPair tokenPair = userService.authenticate(email, rawPassword);
 
         // Assert
-        assertNotNull(token);
-        assertFalse(token.isEmpty());
+        assertNotNull(tokenPair);
+        assertEquals(accessToken, tokenPair.accessToken());
+        assertEquals(refreshToken, tokenPair.refreshToken());
         
         verify(userRepositoryPort).findByEmail(email);
         verify(passwordEncoderPort).matches(rawPassword, encodedPassword);

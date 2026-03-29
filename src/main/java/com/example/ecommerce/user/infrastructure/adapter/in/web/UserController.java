@@ -1,10 +1,12 @@
 package com.example.ecommerce.user.infrastructure.adapter.in.web;
 
 import com.example.ecommerce.user.application.port.in.AuthenticateUserUseCase;
+import com.example.ecommerce.user.application.port.in.RefreshTokenUseCase;
 import com.example.ecommerce.user.application.port.in.RegisterUserUseCase;
 import com.example.ecommerce.user.domain.model.User;
 import com.example.ecommerce.user.infrastructure.adapter.in.web.dto.AuthResponse;
 import com.example.ecommerce.user.infrastructure.adapter.in.web.dto.LoginRequest;
+import com.example.ecommerce.user.infrastructure.adapter.in.web.dto.RefreshTokenRequest;
 import com.example.ecommerce.user.infrastructure.adapter.in.web.dto.UserRegistrationRequest;
 import com.example.ecommerce.user.infrastructure.adapter.in.web.dto.UserResponse;
 import jakarta.validation.Valid;
@@ -21,10 +23,14 @@ public class UserController {
 
     private final RegisterUserUseCase registerUserUseCase;
     private final AuthenticateUserUseCase authenticateUserUseCase;
+    private final RefreshTokenUseCase refreshTokenUseCase;
 
-    public UserController(RegisterUserUseCase registerUserUseCase, AuthenticateUserUseCase authenticateUserUseCase) {
+    public UserController(RegisterUserUseCase registerUserUseCase, 
+                         AuthenticateUserUseCase authenticateUserUseCase,
+                         RefreshTokenUseCase refreshTokenUseCase) {
         this.registerUserUseCase = registerUserUseCase;
         this.authenticateUserUseCase = authenticateUserUseCase;
+        this.refreshTokenUseCase = refreshTokenUseCase;
     }
 
     @PostMapping("/register")
@@ -36,7 +42,17 @@ public class UserController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        String token = authenticateUserUseCase.authenticate(request.getEmail(), request.getPassword());
-        return ResponseEntity.ok(new AuthResponse(token));
+        AuthenticateUserUseCase.TokenPair tokenPair = authenticateUserUseCase.authenticate(
+                request.getEmail(), request.getPassword());
+        return ResponseEntity.ok(new AuthResponse(
+                tokenPair.accessToken(), 
+                tokenPair.refreshToken(), 
+                tokenPair.expiresIn()));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
+        String newAccessToken = refreshTokenUseCase.refreshToken(request.getRefreshToken());
+        return ResponseEntity.ok(new AuthResponse(newAccessToken, request.getRefreshToken(), 86400000));
     }
 }
