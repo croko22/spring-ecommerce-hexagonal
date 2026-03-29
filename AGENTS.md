@@ -274,3 +274,15 @@ class ProductServiceTest {
 - **No Lombok**: This project uses manual getters/setters (Lombok dependency is present but not used)
 - **Java Version**: Requires Java 21+
 - **Database**: PostgreSQL on localhost:5432 (configured via docker-compose)
+
+---
+
+## Project Management
+
+- **Kanban Board**: [Ecommerce App Kanban](https://www.notion.so/38e2eae4512d44908b6a99c6e8644999)
+- **Current / Next Task**: Create Shopping Cart Domain (Status: To Do)
+- **Review**: 
+  - Implement User Authentication ([PR #1](https://github.com/croko22/spring-eccomerce-hexagonal/pull/1))
+  - Add Global Exception Handler ([PR #2](https://github.com/croko22/spring-eccomerce-hexagonal/pull/2))
+- **Upcoming Tasks**:
+  - Set up Order Processing
