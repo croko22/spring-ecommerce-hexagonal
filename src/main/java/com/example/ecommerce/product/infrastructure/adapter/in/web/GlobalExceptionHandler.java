@@ -1,6 +1,8 @@
 package com.example.ecommerce.product.infrastructure.adapter.in.web;
 
 import com.example.ecommerce.order.domain.exception.OrderNotFoundException;
+import com.example.ecommerce.product.domain.exception.CategoryNotFoundException;
+import com.example.ecommerce.product.domain.exception.InvalidCategoryException;
 import com.example.ecommerce.product.domain.exception.InvalidProductException;
 import com.example.ecommerce.product.domain.exception.ProductNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -33,6 +35,20 @@ public class GlobalExceptionHandler {
         Map<String, String> error = new HashMap<>();
         error.put("error", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(CategoryNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleCategoryNotFoundException(CategoryNotFoundException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(InvalidCategoryException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidCategoryException(InvalidCategoryException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

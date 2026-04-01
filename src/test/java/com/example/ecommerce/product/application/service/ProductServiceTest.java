@@ -1,6 +1,7 @@
 package com.example.ecommerce.product.application.service;
 
 import com.example.ecommerce.product.application.port.out.ProductRepositoryPort;
+import com.example.ecommerce.product.application.port.out.CategoryRepositoryPort;
 import com.example.ecommerce.product.domain.exception.ProductNotFoundException;
 import com.example.ecommerce.product.domain.model.Product;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,11 +23,14 @@ class ProductServiceTest {
     @Mock
     private ProductRepositoryPort productRepositoryPort;
 
+    @Mock
+    private CategoryRepositoryPort categoryRepositoryPort;
+
     private ProductService productService;
 
     @BeforeEach
     void setUp() {
-        productService = new ProductService(productRepositoryPort);
+        productService = new ProductService(productRepositoryPort, categoryRepositoryPort);
     }
 
     @Test

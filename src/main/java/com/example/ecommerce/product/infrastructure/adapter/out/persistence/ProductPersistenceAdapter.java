@@ -2,6 +2,8 @@ package com.example.ecommerce.product.infrastructure.adapter.out.persistence;
 
 import com.example.ecommerce.product.application.port.out.ProductRepositoryPort;
 import com.example.ecommerce.product.domain.model.Product;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -27,6 +29,10 @@ public class ProductPersistenceAdapter implements ProductRepositoryPort {
         entity.setName(product.getName());
         entity.setDescription(product.getDescription());
         entity.setPrice(product.getPrice());
+        entity.setStock(product.getStock());
+        entity.setImageUrl(product.getImageUrl());
+        entity.setSku(product.getSku());
+        entity.setCategoryId(product.getCategoryId());
         
         // Save using Spring Data JPA
         ProductEntity savedEntity = productJpaRepository.save(entity);
@@ -51,13 +57,31 @@ public class ProductPersistenceAdapter implements ProductRepositoryPort {
     public void deleteById(Long id) {
         productJpaRepository.deleteById(id);
     }
+
+    @Override
+    public Page<Product> findByFilters(Long categoryId, Double minPrice, Double maxPrice,
+                                       Boolean inStock, String search, Pageable pageable) {
+        return productJpaRepository.findByFilters(categoryId, minPrice, maxPrice, inStock, search, pageable)
+                .map(this::mapToDomainModel);
+    }
+
+    @Override
+    public List<Product> findByCategoryId(Long categoryId) {
+        return productJpaRepository.findByCategoryId(categoryId).stream()
+                .map(this::mapToDomainModel)
+                .collect(Collectors.toList());
+    }
     
     private Product mapToDomainModel(ProductEntity entity) {
         return new Product(
                 entity.getId(),
                 entity.getName(),
                 entity.getDescription(),
-                entity.getPrice()
+                entity.getPrice(),
+                entity.getStock(),
+                entity.getImageUrl(),
+                entity.getSku(),
+                entity.getCategoryId()
         );
     }
 }

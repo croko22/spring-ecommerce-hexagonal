@@ -1,27 +1,30 @@
-package com.example.ecommerce.product.infrastructure.adapter.out.persistence;
+package com.example.ecommerce.product.infrastructure.adapter.in.web.dto;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Column;
-import jakarta.persistence.Table;
+public class ProductResponse {
 
-@Entity
-@Table(name = "products")
-public class ProductEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
     private String description;
     private double price;
-    @Column(columnDefinition = "integer default 0")
     private int stock;
     private String imageUrl;
     private String sku;
     private Long categoryId;
+
+    // Constructors
+    public ProductResponse() {
+    }
+
+    public ProductResponse(Long id, String name, String description, double price, int stock, String imageUrl, String sku, Long categoryId) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.price = price;
+        this.stock = stock;
+        this.imageUrl = imageUrl;
+        this.sku = sku;
+        this.categoryId = categoryId;
+    }
 
     // Getters and Setters
     public Long getId() {
