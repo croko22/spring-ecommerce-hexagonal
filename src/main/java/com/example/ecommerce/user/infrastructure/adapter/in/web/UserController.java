@@ -7,18 +7,21 @@ import com.example.ecommerce.user.domain.model.User;
 import com.example.ecommerce.user.infrastructure.adapter.in.web.dto.AuthResponse;
 import com.example.ecommerce.user.infrastructure.adapter.in.web.dto.LoginRequest;
 import com.example.ecommerce.user.infrastructure.adapter.in.web.dto.RefreshTokenRequest;
+import com.example.ecommerce.user.infrastructure.adapter.in.web.dto.UserProfileResponse;
 import com.example.ecommerce.user.infrastructure.adapter.in.web.dto.UserRegistrationRequest;
 import com.example.ecommerce.user.infrastructure.adapter.in.web.dto.UserResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping({"/api/users", "/api/auth"})
+@RequestMapping({"/api/users", "/api/auth", "/auth"})
 public class UserController {
 
     private final RegisterUserUseCase registerUserUseCase;
@@ -54,5 +57,18 @@ public class UserController {
     public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
         String newAccessToken = jwtService.refreshToken(request.getRefreshToken());
         return ResponseEntity.ok(new AuthResponse(newAccessToken, request.getRefreshToken(), 86400000));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserProfileResponse> me(@AuthenticationPrincipal UserPrincipal principal) {
+        String email = principal.getEmail();
+        String username = email.contains("@") ? email.substring(0, email.indexOf('@')) : email;
+        UserProfileResponse response = new UserProfileResponse(
+                principal.getUserId(),
+                username,
+                email,
+                "USER"
+        );
+        return ResponseEntity.ok(response);
     }
 }
