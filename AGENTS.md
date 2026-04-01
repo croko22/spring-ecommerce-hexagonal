@@ -280,9 +280,29 @@ class ProductServiceTest {
 ## Project Management
 
 - **Kanban Board**: [Ecommerce App Kanban](https://www.notion.so/38e2eae4512d44908b6a99c6e8644999)
-- **Current / Next Task**: Create Shopping Cart Domain (Status: In Progress)
+- **Current / Next Task**: Next feature to implement
 - **Completed**: 
   - Implement User Authentication (merged)
   - Add Global Exception Handler ([PR #2](https://github.com/croko22/spring-eccomerce-hexagonal/pull/2))
-- **Upcoming Tasks**:
-  - Set up Order Processing
+  - Create Shopping Cart Domain ([PR #3](https://github.com/croko22/spring-eccomerce-hexagonal/pull/3))
+  - Set up Order Processing ([PR #4](https://github.com/croko22/spring-eccomerce-hexagonal/pull/4))
+  - Implement JWT Authentication ([PR #5](https://github.com/croko22/spring-eccomerce-hexagonal/pull/5))
+  - Backend - Product Catalog API
+
+### Upcoming Tasks (Notion)
+**Backend (Spring Boot)**:
+- Product Catalog API
+- Payment Integration
+- Email Notifications
+- Admin Dashboard API
+- Inventory Management
+
+**Frontend (Nuxt 3)**:
+- Nuxt Frontend Setup
+- User Authentication UI
+- Product Listing Page
+- Product Detail Page
+- Shopping Cart UI
+- Checkout Flow
+- User Profile & Orders
+- Admin Dashboard UI

@@ -1,8 +1,8 @@
 package com.example.ecommerce.user.infrastructure.adapter.in.web;
 
 import com.example.ecommerce.user.application.port.in.AuthenticateUserUseCase;
-import com.example.ecommerce.user.application.port.in.RefreshTokenUseCase;
 import com.example.ecommerce.user.application.port.in.RegisterUserUseCase;
+import com.example.ecommerce.user.application.service.JWTService;
 import com.example.ecommerce.user.domain.model.User;
 import com.example.ecommerce.user.infrastructure.adapter.in.web.dto.AuthResponse;
 import com.example.ecommerce.user.infrastructure.adapter.in.web.dto.LoginRequest;
@@ -23,14 +23,14 @@ public class UserController {
 
     private final RegisterUserUseCase registerUserUseCase;
     private final AuthenticateUserUseCase authenticateUserUseCase;
-    private final RefreshTokenUseCase refreshTokenUseCase;
+    private final JWTService jwtService;
 
     public UserController(RegisterUserUseCase registerUserUseCase, 
                          AuthenticateUserUseCase authenticateUserUseCase,
-                         RefreshTokenUseCase refreshTokenUseCase) {
+                         JWTService jwtService) {
         this.registerUserUseCase = registerUserUseCase;
         this.authenticateUserUseCase = authenticateUserUseCase;
-        this.refreshTokenUseCase = refreshTokenUseCase;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/register")
@@ -52,7 +52,7 @@ public class UserController {
 
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
-        String newAccessToken = refreshTokenUseCase.refreshToken(request.getRefreshToken());
+        String newAccessToken = jwtService.refreshToken(request.getRefreshToken());
         return ResponseEntity.ok(new AuthResponse(newAccessToken, request.getRefreshToken(), 86400000));
     }
 }
