@@ -46,6 +46,7 @@ public class SecurityConfig {
                     "/api/users/register", "/api/users/login", "/api/users/refresh",
                     "/api/auth/register", "/api/auth/login", "/api/auth/refresh"
                 ).permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/payments/webhooks/provider").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .anyRequest().authenticated()
             )

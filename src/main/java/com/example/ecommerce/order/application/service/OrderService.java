@@ -5,6 +5,7 @@ import com.example.ecommerce.cart.domain.model.CartItem;
 import com.example.ecommerce.order.application.port.in.*;
 import com.example.ecommerce.order.application.port.out.CartPort;
 import com.example.ecommerce.order.application.port.out.OrderRepositoryPort;
+import com.example.ecommerce.order.domain.exception.DirectOrderPaidTransitionNotAllowedException;
 import com.example.ecommerce.order.domain.exception.OrderNotFoundException;
 import com.example.ecommerce.order.domain.model.Order;
 import com.example.ecommerce.order.domain.model.OrderItem;
@@ -90,6 +91,10 @@ public class OrderService implements CreateOrderUseCase, GetOrderUseCase, GetUse
 
     @Override
     public Order updateOrderStatus(Long orderId, OrderStatus newStatus) {
+        if (newStatus == OrderStatus.PAID) {
+            throw new DirectOrderPaidTransitionNotAllowedException();
+        }
+
         Order order = getOrderById(orderId);
         order.updateStatus(newStatus);
         return orderRepositoryPort.save(order);

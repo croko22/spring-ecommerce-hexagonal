@@ -5,6 +5,7 @@ import com.example.ecommerce.cart.domain.model.CartItem;
 import com.example.ecommerce.order.application.port.in.CreateOrderUseCase;
 import com.example.ecommerce.order.application.port.out.CartPort;
 import com.example.ecommerce.order.application.port.out.OrderRepositoryPort;
+import com.example.ecommerce.order.domain.exception.DirectOrderPaidTransitionNotAllowedException;
 import com.example.ecommerce.order.domain.exception.OrderNotFoundException;
 import com.example.ecommerce.order.domain.model.Order;
 import com.example.ecommerce.order.domain.model.OrderItem;
@@ -163,7 +164,7 @@ class OrderServiceTest {
     }
 
     @Test
-    void shouldUpdateOrderStatus() {
+    void shouldUpdateOrderStatusForAllowedNonPaymentTransition() {
         OrderItem orderItem = new OrderItem(1L, 1L, "Product 1", 2, 10.0);
         ShippingAddress address = new ShippingAddress("123 Main St", "City", "State", "12345", "Country");
         Order order = new Order(
@@ -181,8 +182,17 @@ class OrderServiceTest {
         when(orderRepositoryPort.findById(1L)).thenReturn(Optional.of(order));
         when(orderRepositoryPort.save(any(Order.class))).thenReturn(order);
 
-        Order result = orderService.updateOrderStatus(1L, OrderStatus.PAID);
+        Order result = orderService.updateOrderStatus(1L, OrderStatus.CANCELLED);
 
-        assertEquals(OrderStatus.PAID, result.getStatus());
+        assertEquals(OrderStatus.CANCELLED, result.getStatus());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUpdatingOrderStatusDirectlyToPaid() {
+        assertThrows(DirectOrderPaidTransitionNotAllowedException.class,
+                () -> orderService.updateOrderStatus(1L, OrderStatus.PAID));
+
+        verify(orderRepositoryPort, never()).findById(any(Long.class));
+        verify(orderRepositoryPort, never()).save(any(Order.class));
     }
 }
