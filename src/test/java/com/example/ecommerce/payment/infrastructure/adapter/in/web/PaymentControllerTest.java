@@ -1,6 +1,8 @@
 package com.example.ecommerce.payment.infrastructure.adapter.in.web;
 
 import com.example.ecommerce.payment.application.exception.IdempotencyConflictException;
+import com.example.ecommerce.payment.application.exception.IdempotencyInProgressException;
+import com.example.ecommerce.payment.application.exception.PaymentAccessDeniedException;
 import com.example.ecommerce.payment.application.exception.PaymentWebhookSignatureInvalidException;
 import com.example.ecommerce.payment.application.exception.ProviderTimeoutException;
 import com.example.ecommerce.payment.application.port.in.GetPaymentUseCase;
@@ -139,6 +141,39 @@ class PaymentControllerTest {
                                 "\"paymentMethodToken\":\"pm-x\"}"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("PAYMENT_IDEMPOTENCY_CONFLICT"))
+                .andExpect(jsonPath("$.retryable").value(false));
+    }
+
+    @Test
+    void shouldMapIdempotencyInProgressTo409Retryable() throws Exception {
+        when(initiatePaymentUseCase.initiatePayment(any()))
+                .thenThrow(new IdempotencyInProgressException("Payment request is already in progress for key idem-x"));
+
+        mockMvc.perform(post("/api/payments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{" +
+                                "\"orderId\":10," +
+                                "\"idempotencyKey\":\"idem-x\"," +
+                                "\"paymentMethodToken\":\"pm-x\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("PAYMENT_IN_PROGRESS"))
+                .andExpect(jsonPath("$.retryable").value(true));
+    }
+
+    @Test
+    void shouldMapAccessDeniedTo403WithoutOwnershipDetails() throws Exception {
+        when(initiatePaymentUseCase.initiatePayment(any()))
+                .thenThrow(new PaymentAccessDeniedException("Access denied to payment resource"));
+
+        mockMvc.perform(post("/api/payments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{" +
+                                "\"orderId\":10," +
+                                "\"idempotencyKey\":\"idem-x\"," +
+                                "\"paymentMethodToken\":\"pm-x\"}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("PAYMENT_FORBIDDEN"))
+                .andExpect(jsonPath("$.message").value("Access denied to payment resource"))
                 .andExpect(jsonPath("$.retryable").value(false));
     }
 

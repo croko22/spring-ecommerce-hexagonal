@@ -2,6 +2,7 @@ package com.example.ecommerce.payment.application.service;
 
 import com.example.ecommerce.payment.application.exception.OrderNotPayableException;
 import com.example.ecommerce.payment.application.exception.PaymentAccessDeniedException;
+import com.example.ecommerce.payment.application.exception.IdempotencyInProgressException;
 import com.example.ecommerce.payment.application.exception.PaymentNotFoundException;
 import com.example.ecommerce.payment.application.exception.PaymentWebhookSignatureInvalidException;
 import com.example.ecommerce.payment.application.port.in.GetPaymentUseCase;
@@ -73,18 +74,25 @@ public class PaymentService implements InitiatePaymentUseCase, GetPaymentUseCase
         String actorScope = buildActorScope(principalUserId, orderSnapshot.orderId());
         String requestHash = requestHash(command);
 
-        paymentIdempotencyPort.reserveOrValidate(PaymentOperation.INITIATE, actorScope, idempotencyKey, requestHash);
-
-        PaymentIdempotencyPort.StoredResponse storedResponse = paymentIdempotencyPort.findStoredResponse(
+        PaymentIdempotencyPort.AcquireOutcome outcome = paymentIdempotencyPort.acquireOrReplay(
                 PaymentOperation.INITIATE,
                 actorScope,
-                idempotencyKey
-        ).orElse(null);
+                idempotencyKey,
+                requestHash
+        );
 
-        if (storedResponse != null) {
-            return parseStoredResponse(storedResponse.responseBody());
+        if (outcome instanceof PaymentIdempotencyPort.Replay replay) {
+            return parseStoredResponse(replay.storedResponse().responseBody());
         }
 
+        if (outcome instanceof PaymentIdempotencyPort.InProgress) {
+            throw new IdempotencyInProgressException(
+                    "Payment request is already in progress for key " + idempotencyKey.getValue()
+            );
+        }
+
+        // External provider invocation intentionally runs outside idempotency persistence transactions.
+        // Reserve/update operations are isolated in adapter-level short transactions.
         Payment payment = Payment.initiate(
                 orderSnapshot.orderId(),
                 principalUserId,
@@ -118,7 +126,7 @@ public class PaymentService implements InitiatePaymentUseCase, GetPaymentUseCase
                 payment.getProviderReference() != null ? payment.getProviderReference().getValue() : null
         );
 
-        paymentIdempotencyPort.saveResult(
+        paymentIdempotencyPort.complete(
                 PaymentOperation.INITIATE,
                 actorScope,
                 idempotencyKey,
@@ -198,9 +206,7 @@ public class PaymentService implements InitiatePaymentUseCase, GetPaymentUseCase
 
     private void validateOwnership(Long principalUserId, Long ownerUserId, Long orderId) {
         if (!principalUserId.equals(ownerUserId)) {
-            throw new PaymentAccessDeniedException(
-                    "User " + principalUserId + " cannot access payment flow for order " + orderId
-            );
+            throw new PaymentAccessDeniedException("Access denied to payment resource");
         }
     }
 

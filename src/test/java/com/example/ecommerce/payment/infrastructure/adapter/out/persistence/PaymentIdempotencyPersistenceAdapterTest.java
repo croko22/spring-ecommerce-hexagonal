@@ -43,22 +43,24 @@ class PaymentIdempotencyPersistenceAdapterTest {
         existing.setActorScope("u1:o1");
         existing.setIdempotencyKey("key-1");
         existing.setRequestHash("hash-a");
+        existing.setStatus(PaymentIdempotencyEntity.ProcessingStatus.IN_PROGRESS);
 
         when(repository.findByOperationAndActorScopeAndIdempotencyKey(PaymentOperation.INITIATE, "u1:o1", "key-1"))
                 .thenReturn(Optional.of(existing));
 
         assertThrows(IdempotencyConflictException.class, () ->
-                adapter.reserveOrValidate(PaymentOperation.INITIATE, "u1:o1", new IdempotencyKey("key-1"), "hash-b")
+                adapter.acquireOrReplay(PaymentOperation.INITIATE, "u1:o1", new IdempotencyKey("key-1"), "hash-b")
         );
     }
 
     @Test
-    void shouldReturnStoredResponseForDuplicateSamePayload() {
+    void shouldReturnReplayOutcomeForCompletedDuplicateSamePayload() {
         PaymentIdempotencyEntity existing = new PaymentIdempotencyEntity();
         existing.setOperation(PaymentOperation.INITIATE);
         existing.setActorScope("u1:o1");
         existing.setIdempotencyKey("key-1");
         existing.setRequestHash("hash-a");
+        existing.setStatus(PaymentIdempotencyEntity.ProcessingStatus.COMPLETED);
         existing.setPaymentId(99L);
         existing.setResponseStatus("CAPTURED");
         existing.setResponseBody("{\"paymentId\":99}");
@@ -66,15 +68,39 @@ class PaymentIdempotencyPersistenceAdapterTest {
         when(repository.findByOperationAndActorScopeAndIdempotencyKey(PaymentOperation.INITIATE, "u1:o1", "key-1"))
                 .thenReturn(Optional.of(existing));
 
-        Optional<PaymentIdempotencyPort.StoredResponse> result = adapter.findStoredResponse(
+        PaymentIdempotencyPort.AcquireOutcome result = adapter.acquireOrReplay(
                 PaymentOperation.INITIATE,
                 "u1:o1",
-                new IdempotencyKey("key-1")
+                new IdempotencyKey("key-1"),
+                "hash-a"
         );
 
-        assertTrue(result.isPresent());
-        assertEquals(99L, result.get().paymentId());
-        assertEquals("CAPTURED", result.get().responseStatus());
+        assertTrue(result instanceof PaymentIdempotencyPort.Replay);
+        PaymentIdempotencyPort.Replay replay = (PaymentIdempotencyPort.Replay) result;
+        assertEquals(99L, replay.storedResponse().paymentId());
+        assertEquals("CAPTURED", replay.storedResponse().responseStatus());
+    }
+
+    @Test
+    void shouldReturnInProgressOutcomeForActiveDuplicateSamePayload() {
+        PaymentIdempotencyEntity existing = new PaymentIdempotencyEntity();
+        existing.setOperation(PaymentOperation.INITIATE);
+        existing.setActorScope("u1:o1");
+        existing.setIdempotencyKey("key-1");
+        existing.setRequestHash("hash-a");
+        existing.setStatus(PaymentIdempotencyEntity.ProcessingStatus.IN_PROGRESS);
+
+        when(repository.findByOperationAndActorScopeAndIdempotencyKey(PaymentOperation.INITIATE, "u1:o1", "key-1"))
+                .thenReturn(Optional.of(existing));
+
+        PaymentIdempotencyPort.AcquireOutcome result = adapter.acquireOrReplay(
+                PaymentOperation.INITIATE,
+                "u1:o1",
+                new IdempotencyKey("key-1"),
+                "hash-a"
+        );
+
+        assertTrue(result instanceof PaymentIdempotencyPort.InProgress);
     }
 
     @Test
@@ -82,7 +108,7 @@ class PaymentIdempotencyPersistenceAdapterTest {
         featureProperties.setEnabled(false);
 
         assertThrows(PaymentFeatureDisabledException.class, () ->
-                adapter.reserveOrValidate(PaymentOperation.INITIATE, "u1:o1", new IdempotencyKey("key-1"), "hash-a")
+                adapter.acquireOrReplay(PaymentOperation.INITIATE, "u1:o1", new IdempotencyKey("key-1"), "hash-a")
         );
     }
 }

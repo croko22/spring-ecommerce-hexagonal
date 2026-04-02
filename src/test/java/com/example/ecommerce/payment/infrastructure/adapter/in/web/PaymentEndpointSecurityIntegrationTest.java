@@ -3,6 +3,7 @@ package com.example.ecommerce.payment.infrastructure.adapter.in.web;
 import com.example.ecommerce.payment.application.port.in.GetPaymentUseCase;
 import com.example.ecommerce.payment.application.port.in.HandlePaymentWebhookUseCase;
 import com.example.ecommerce.payment.application.port.in.InitiatePaymentUseCase;
+import com.example.ecommerce.payment.application.exception.PaymentAccessDeniedException;
 import com.example.ecommerce.user.application.port.out.JWTProviderPort;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,5 +103,27 @@ class PaymentEndpointSecurityIntegrationTest {
                         .content("{\"type\":\"payment.captured\"}"))
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.receiptId").value(700));
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenAuthenticatedUserDoesNotOwnOrderEvenWithSpoofedHeader() throws Exception {
+        when(jwtProviderPort.validateToken("valid-token")).thenReturn(true);
+        when(jwtProviderPort.getEmailFromToken("valid-token")).thenReturn("john.doe@example.com");
+        when(jwtProviderPort.getUserIdFromToken("valid-token")).thenReturn(42L);
+        when(initiatePaymentUseCase.initiatePayment(any()))
+                .thenThrow(new PaymentAccessDeniedException("Access denied to payment resource"));
+
+        mockMvc.perform(post("/api/payments")
+                        .header("Authorization", "Bearer valid-token")
+                        .header("X-User-Id", "999")
+                        .contentType("application/json")
+                        .content("{" +
+                                "\"orderId\":88," +
+                                "\"idempotencyKey\":\"idem-ownership\"," +
+                                "\"paymentMethodToken\":\"pm-ok\"}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("PAYMENT_FORBIDDEN"))
+                .andExpect(jsonPath("$.message").value("Access denied to payment resource"))
+                .andExpect(jsonPath("$.retryable").value(false));
     }
 }

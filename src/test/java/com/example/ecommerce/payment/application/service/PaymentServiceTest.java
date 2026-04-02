@@ -1,6 +1,8 @@
 package com.example.ecommerce.payment.application.service;
 
 import com.example.ecommerce.payment.application.exception.IdempotencyConflictException;
+import com.example.ecommerce.payment.application.exception.IdempotencyInProgressException;
+import com.example.ecommerce.payment.application.exception.PaymentAccessDeniedException;
 import com.example.ecommerce.payment.application.exception.PaymentWebhookSignatureInvalidException;
 import com.example.ecommerce.payment.application.port.in.HandlePaymentWebhookUseCase;
 import com.example.ecommerce.payment.application.port.in.InitiatePaymentUseCase;
@@ -102,6 +104,8 @@ class PaymentServiceTest {
                 10.235,
                 "USD"
         ));
+        when(paymentIdempotencyPort.acquireOrReplay(eq(PaymentOperation.INITIATE), eq("7:10"), eq(new IdempotencyKey("idem-1")), anyString()))
+                .thenReturn(new PaymentIdempotencyPort.Acquired());
         when(paymentRepositoryPort.save(any(Payment.class)))
                 .thenAnswer(invocation -> {
                     Payment payment = invocation.getArgument(0);
@@ -129,7 +133,7 @@ class PaymentServiceTest {
         assertEquals(new BigDecimal("10.24"), initiatedPayment.getAmount().getAmount());
 
         verify(orderPaymentTransitionPort).markPaidAfterPayment(10L, 99L);
-        verify(paymentIdempotencyPort).saveResult(
+        verify(paymentIdempotencyPort).complete(
                 eq(PaymentOperation.INITIATE),
                 eq("7:10"),
                 eq(new IdempotencyKey("idem-1")),
@@ -156,6 +160,8 @@ class PaymentServiceTest {
                 12.0,
                 "USD"
         ));
+        when(paymentIdempotencyPort.acquireOrReplay(eq(PaymentOperation.INITIATE), eq("7:11"), eq(new IdempotencyKey("idem-2")), anyString()))
+                .thenReturn(new PaymentIdempotencyPort.Acquired());
         when(paymentRepositoryPort.save(any(Payment.class)))
                 .thenAnswer(invocation -> {
                     Payment payment = invocation.getArgument(0);
@@ -192,8 +198,10 @@ class PaymentServiceTest {
                 9.0,
                 "USD"
         ));
-        when(paymentIdempotencyPort.findStoredResponse(PaymentOperation.INITIATE, "7:12", new IdempotencyKey("idem-3")))
-                .thenReturn(Optional.of(new PaymentIdempotencyPort.StoredResponse(77L, "CAPTURED", "77|CAPTURED|9.00|USD|12|prov-x", "hash-a")));
+        when(paymentIdempotencyPort.acquireOrReplay(eq(PaymentOperation.INITIATE), eq("7:12"), eq(new IdempotencyKey("idem-3")), anyString()))
+                .thenReturn(new PaymentIdempotencyPort.Replay(
+                        new PaymentIdempotencyPort.StoredResponse(77L, "CAPTURED", "77|CAPTURED|9.00|USD|12|prov-x", "hash-a")
+                ));
 
         InitiatePaymentUseCase.InitiatePaymentResult result = paymentService.initiatePayment(command);
 
@@ -206,6 +214,30 @@ class PaymentServiceTest {
         verify(paymentRepositoryPort, never()).save(any(Payment.class));
         verify(paymentProviderPort, never()).authorizeAndCapture(any(Long.class), any(Long.class), any(String.class));
         verify(orderPaymentTransitionPort, never()).markPaidAfterPayment(any(Long.class), any(Long.class));
+    }
+
+    @Test
+    void shouldThrowInProgressWhenSameIdempotencyKeyIsActive() {
+        InitiatePaymentUseCase.InitiatePaymentCommand command = new InitiatePaymentUseCase.InitiatePaymentCommand(
+                120L,
+                "idem-in-progress",
+                "pm-ok"
+        );
+
+        when(principalAccessPort.getCurrentUserId()).thenReturn(7L);
+        when(orderSnapshotPort.getOrderSnapshot(120L)).thenReturn(new OrderSnapshotPort.OrderSnapshot(
+                120L,
+                7L,
+                "PENDING",
+                9.0,
+                "USD"
+        ));
+        when(paymentIdempotencyPort.acquireOrReplay(eq(PaymentOperation.INITIATE), eq("7:120"), eq(new IdempotencyKey("idem-in-progress")), anyString()))
+                .thenReturn(new PaymentIdempotencyPort.InProgress());
+
+        assertThrows(IdempotencyInProgressException.class, () -> paymentService.initiatePayment(command));
+        verify(paymentProviderPort, never()).authorizeAndCapture(any(Long.class), any(Long.class), any(String.class));
+        verify(paymentRepositoryPort, never()).save(any(Payment.class));
     }
 
     @Test
@@ -226,10 +258,32 @@ class PaymentServiceTest {
         ));
         doThrow(new IdempotencyConflictException("conflict"))
                 .when(paymentIdempotencyPort)
-                .reserveOrValidate(eq(PaymentOperation.INITIATE), eq("7:13"), eq(new IdempotencyKey("idem-4")), anyString());
+                .acquireOrReplay(eq(PaymentOperation.INITIATE), eq("7:13"), eq(new IdempotencyKey("idem-4")), anyString());
 
         assertThrows(IdempotencyConflictException.class, () -> paymentService.initiatePayment(command));
         verify(paymentRepositoryPort, never()).save(any(Payment.class));
+    }
+
+    @Test
+    void shouldDenyInitiatePaymentWhenPrincipalDoesNotOwnOrder() {
+        InitiatePaymentUseCase.InitiatePaymentCommand command = new InitiatePaymentUseCase.InitiatePaymentCommand(
+                300L,
+                "idem-ownership",
+                "pm-ok"
+        );
+
+        when(principalAccessPort.getCurrentUserId()).thenReturn(7L);
+        when(orderSnapshotPort.getOrderSnapshot(300L)).thenReturn(new OrderSnapshotPort.OrderSnapshot(
+                300L,
+                8L,
+                "PENDING",
+                20.0,
+                "USD"
+        ));
+
+        assertThrows(PaymentAccessDeniedException.class, () -> paymentService.initiatePayment(command));
+        verify(paymentIdempotencyPort, never()).acquireOrReplay(any(), anyString(), any(), anyString());
+        verify(paymentProviderPort, never()).authorizeAndCapture(any(Long.class), any(Long.class), any(String.class));
     }
 
     @Test

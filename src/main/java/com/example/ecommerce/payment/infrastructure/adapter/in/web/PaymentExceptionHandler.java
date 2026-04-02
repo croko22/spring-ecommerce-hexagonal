@@ -1,6 +1,7 @@
 package com.example.ecommerce.payment.infrastructure.adapter.in.web;
 
 import com.example.ecommerce.payment.application.exception.IdempotencyConflictException;
+import com.example.ecommerce.payment.application.exception.IdempotencyInProgressException;
 import com.example.ecommerce.payment.application.exception.OrderNotPayableException;
 import com.example.ecommerce.payment.application.exception.PaymentAccessDeniedException;
 import com.example.ecommerce.payment.application.exception.PaymentFeatureDisabledException;
@@ -44,6 +45,14 @@ public class PaymentExceptionHandler {
             HttpServletRequest request
     ) {
         return buildResponse("PAYMENT_IDEMPOTENCY_CONFLICT", ex.getMessage(), false, request.getRequestURI(), HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(IdempotencyInProgressException.class)
+    public ResponseEntity<PaymentErrorResponse> handleIdempotencyInProgress(
+            IdempotencyInProgressException ex,
+            HttpServletRequest request
+    ) {
+        return buildResponse("PAYMENT_IN_PROGRESS", ex.getMessage(), true, request.getRequestURI(), HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(PaymentNotFoundException.class)

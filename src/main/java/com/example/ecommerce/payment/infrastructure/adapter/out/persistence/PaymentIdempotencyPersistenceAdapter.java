@@ -11,7 +11,6 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Repository
 public class PaymentIdempotencyPersistenceAdapter implements PaymentIdempotencyPort {
@@ -29,22 +28,22 @@ public class PaymentIdempotencyPersistenceAdapter implements PaymentIdempotencyP
 
     @Override
     @Transactional
-    public void reserveOrValidate(
+    public AcquireOutcome acquireOrReplay(
             PaymentOperation operation,
             String actorScope,
             IdempotencyKey idempotencyKey,
             String requestHash
     ) {
         assertWriteEnabled();
-        Optional<PaymentIdempotencyEntity> existing = repository.findByOperationAndActorScopeAndIdempotencyKey(
+        PaymentIdempotencyEntity existing = repository.findByOperationAndActorScopeAndIdempotencyKey(
                 operation,
                 actorScope,
                 idempotencyKey.getValue()
-        );
+        ).orElse(null);
 
-        if (existing.isPresent()) {
-            validateRequestHash(existing.get(), requestHash, idempotencyKey);
-            return;
+        if (existing != null) {
+            validateRequestHash(existing, requestHash, idempotencyKey);
+            return toAcquireOutcome(existing);
         }
 
         PaymentIdempotencyEntity entity = new PaymentIdempotencyEntity();
@@ -52,11 +51,13 @@ public class PaymentIdempotencyPersistenceAdapter implements PaymentIdempotencyP
         entity.setActorScope(actorScope);
         entity.setIdempotencyKey(idempotencyKey.getValue());
         entity.setRequestHash(requestHash);
+        entity.setStatus(PaymentIdempotencyEntity.ProcessingStatus.IN_PROGRESS);
         entity.setCreatedAt(LocalDateTime.now());
         entity.setUpdatedAt(LocalDateTime.now());
 
         try {
             repository.save(entity);
+            return new Acquired();
         } catch (DataIntegrityViolationException ex) {
             PaymentIdempotencyEntity concurrent = repository.findByOperationAndActorScopeAndIdempotencyKey(
                     operation,
@@ -64,29 +65,13 @@ public class PaymentIdempotencyPersistenceAdapter implements PaymentIdempotencyP
                     idempotencyKey.getValue()
             ).orElseThrow(() -> ex);
             validateRequestHash(concurrent, requestHash, idempotencyKey);
+            return toAcquireOutcome(concurrent);
         }
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public Optional<StoredResponse> findStoredResponse(
-            PaymentOperation operation,
-            String actorScope,
-            IdempotencyKey idempotencyKey
-    ) {
-        return repository.findByOperationAndActorScopeAndIdempotencyKey(operation, actorScope, idempotencyKey.getValue())
-                .filter(entity -> entity.getResponseStatus() != null)
-                .map(entity -> new StoredResponse(
-                        entity.getPaymentId(),
-                        entity.getResponseStatus(),
-                        entity.getResponseBody(),
-                        entity.getRequestHash()
-                ));
-    }
-
-    @Override
     @Transactional
-    public void saveResult(
+    public void complete(
             PaymentOperation operation,
             String actorScope,
             IdempotencyKey idempotencyKey,
@@ -107,8 +92,32 @@ public class PaymentIdempotencyPersistenceAdapter implements PaymentIdempotencyP
         entity.setPaymentId(paymentId);
         entity.setResponseStatus(responseStatus);
         entity.setResponseBody(responseBody);
+        entity.setStatus(PaymentIdempotencyEntity.ProcessingStatus.COMPLETED);
         entity.setUpdatedAt(LocalDateTime.now());
         repository.save(entity);
+    }
+
+    private AcquireOutcome toAcquireOutcome(PaymentIdempotencyEntity entity) {
+        PaymentIdempotencyEntity.ProcessingStatus status = resolveStatus(entity);
+        if (status == PaymentIdempotencyEntity.ProcessingStatus.COMPLETED) {
+            return new Replay(new StoredResponse(
+                    entity.getPaymentId(),
+                    entity.getResponseStatus(),
+                    entity.getResponseBody(),
+                    entity.getRequestHash()
+            ));
+        }
+        return new InProgress();
+    }
+
+    private PaymentIdempotencyEntity.ProcessingStatus resolveStatus(PaymentIdempotencyEntity entity) {
+        if (entity.getStatus() != null) {
+            return entity.getStatus();
+        }
+        if (entity.getResponseStatus() != null) {
+            return PaymentIdempotencyEntity.ProcessingStatus.COMPLETED;
+        }
+        return PaymentIdempotencyEntity.ProcessingStatus.IN_PROGRESS;
     }
 
     private void validateRequestHash(

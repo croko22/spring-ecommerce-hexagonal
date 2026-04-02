@@ -40,6 +40,10 @@ public class PaymentIdempotencyEntity {
     @Column(name = "request_hash", nullable = false, length = 128)
     private String requestHash;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", length = 20)
+    private ProcessingStatus status = ProcessingStatus.IN_PROGRESS;
+
     @Column(name = "payment_id")
     private Long paymentId;
 
@@ -95,6 +99,14 @@ public class PaymentIdempotencyEntity {
         this.requestHash = requestHash;
     }
 
+    public ProcessingStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ProcessingStatus status) {
+        this.status = status;
+    }
+
     public Long getPaymentId() {
         return paymentId;
     }
@@ -133,5 +145,10 @@ public class PaymentIdempotencyEntity {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public enum ProcessingStatus {
+        IN_PROGRESS,
+        COMPLETED
     }
 }
