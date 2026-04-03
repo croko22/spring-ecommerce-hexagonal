@@ -28,6 +28,9 @@ public abstract class PostgresContainerIntegrationTest {
         registry.add("spring.flyway.locations", () -> "classpath:db/migration");
         registry.add("spring.flyway.baseline-on-migrate", () -> "false");
         registry.add("spring.flyway.baseline-version", () -> "1");
+        registry.add("spring.flyway.default-schema", () -> "public");
+        registry.add("spring.flyway.schemas", () -> "public");
+        registry.add("spring.flyway.create-schemas", () -> "false");
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
     }
 }
