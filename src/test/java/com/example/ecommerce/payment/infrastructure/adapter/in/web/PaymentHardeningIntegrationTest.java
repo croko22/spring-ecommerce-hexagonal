@@ -11,7 +11,9 @@ import com.example.ecommerce.payment.domain.model.PaymentOperation;
 import com.example.ecommerce.payment.infrastructure.adapter.out.persistence.PaymentIdempotencyEntity;
 import com.example.ecommerce.payment.infrastructure.adapter.out.persistence.PaymentIdempotencyJpaRepository;
 import com.example.ecommerce.payment.infrastructure.adapter.out.persistence.PaymentJpaRepository;
+import com.example.ecommerce.shared.infrastructure.PostgresContainerIntegrationTest;
 import com.example.ecommerce.user.application.port.out.JWTProviderPort;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -40,7 +42,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(properties = "feature.payment.enabled=true")
 @AutoConfigureMockMvc
 @Transactional
-class PaymentHardeningIntegrationTest {
+@Tag("integration")
+class PaymentHardeningIntegrationTest extends PostgresContainerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

@@ -1,6 +1,8 @@
 package com.example.ecommerce.payment.infrastructure.adapter.out.persistence;
 
 import com.example.ecommerce.payment.application.port.out.PaymentWebhookReceiptPort;
+import com.example.ecommerce.shared.infrastructure.PostgresContainerIntegrationTest;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,7 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(properties = "feature.payment.enabled=true")
 @Transactional
-class PaymentWebhookReceiptPersistenceIntegrationTest {
+@Tag("integration")
+class PaymentWebhookReceiptPersistenceIntegrationTest extends PostgresContainerIntegrationTest {
 
     @Autowired
     private PaymentWebhookReceiptJpaRepository repository;

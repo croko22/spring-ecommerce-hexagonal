@@ -1,6 +1,8 @@
 package com.example.ecommerce.user.infrastructure.adapter.in.web;
 
+import com.example.ecommerce.shared.infrastructure.PostgresContainerIntegrationTest;
 import com.example.ecommerce.user.application.port.out.JWTProviderPort;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,7 +18,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class UserMeEndpointSecurityIntegrationTest {
+@Tag("integration")
+class UserMeEndpointSecurityIntegrationTest extends PostgresContainerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

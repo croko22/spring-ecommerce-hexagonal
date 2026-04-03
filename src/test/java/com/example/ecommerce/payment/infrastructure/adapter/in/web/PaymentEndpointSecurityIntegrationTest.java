@@ -4,7 +4,9 @@ import com.example.ecommerce.payment.application.port.in.GetPaymentUseCase;
 import com.example.ecommerce.payment.application.port.in.HandlePaymentWebhookUseCase;
 import com.example.ecommerce.payment.application.port.in.InitiatePaymentUseCase;
 import com.example.ecommerce.payment.application.exception.PaymentAccessDeniedException;
+import com.example.ecommerce.shared.infrastructure.PostgresContainerIntegrationTest;
 import com.example.ecommerce.user.application.port.out.JWTProviderPort;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,7 +25,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class PaymentEndpointSecurityIntegrationTest {
+@Tag("integration")
+class PaymentEndpointSecurityIntegrationTest extends PostgresContainerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

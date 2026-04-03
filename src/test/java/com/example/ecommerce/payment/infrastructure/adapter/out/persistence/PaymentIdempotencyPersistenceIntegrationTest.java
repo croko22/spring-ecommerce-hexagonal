@@ -4,6 +4,8 @@ import com.example.ecommerce.payment.application.exception.IdempotencyConflictEx
 import com.example.ecommerce.payment.application.port.out.PaymentIdempotencyPort;
 import com.example.ecommerce.payment.domain.model.IdempotencyKey;
 import com.example.ecommerce.payment.domain.model.PaymentOperation;
+import com.example.ecommerce.shared.infrastructure.PostgresContainerIntegrationTest;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,7 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(properties = "feature.payment.enabled=true")
 @Transactional
-class PaymentIdempotencyPersistenceIntegrationTest {
+@Tag("integration")
+class PaymentIdempotencyPersistenceIntegrationTest extends PostgresContainerIntegrationTest {
 
     @Autowired
     private PaymentIdempotencyJpaRepository repository;

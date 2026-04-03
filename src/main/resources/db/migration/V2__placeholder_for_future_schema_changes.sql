@@ -1,0 +1,3 @@
+-- Placeholder migration to establish post-baseline workflow.
+-- Add future schema changes in new versioned files (V3+, V4+, ...).
+-- This migration is intentionally a no-op.
