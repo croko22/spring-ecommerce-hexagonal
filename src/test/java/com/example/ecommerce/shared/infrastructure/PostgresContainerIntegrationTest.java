@@ -24,5 +24,10 @@ public abstract class PostgresContainerIntegrationTest {
         registry.add("spring.datasource.url", POSTGRESQL_CONTAINER::getJdbcUrl);
         registry.add("spring.datasource.username", POSTGRESQL_CONTAINER::getUsername);
         registry.add("spring.datasource.password", POSTGRESQL_CONTAINER::getPassword);
+        registry.add("spring.flyway.enabled", () -> "true");
+        registry.add("spring.flyway.locations", () -> "classpath:db/migration");
+        registry.add("spring.flyway.baseline-on-migrate", () -> "false");
+        registry.add("spring.flyway.baseline-version", () -> "1");
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
     }
 }
