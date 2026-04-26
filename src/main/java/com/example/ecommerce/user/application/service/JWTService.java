@@ -29,13 +29,14 @@ public class JWTService implements GenerateTokenUseCase, ValidateTokenUseCase, R
     private long refreshExpiration;
 
     @Override
-    public String generateToken(String email, Long userId) {
+    public String generateToken(String email, Long userId, String role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpiration);
 
         return Jwts.builder()
                 .subject(email)
                 .claim("userId", userId)
+                .claim("role", role)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(getSigningKey())
@@ -43,13 +44,14 @@ public class JWTService implements GenerateTokenUseCase, ValidateTokenUseCase, R
     }
 
     @Override
-    public String generateRefreshToken(String email, Long userId) {
+    public String generateRefreshToken(String email, Long userId, String role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + refreshExpiration);
 
         return Jwts.builder()
                 .subject(email)
                 .claim("userId", userId)
+                .claim("role", role)
                 .claim("type", "refresh")
                 .issuedAt(now)
                 .expiration(expiryDate)
@@ -90,6 +92,15 @@ public class JWTService implements GenerateTokenUseCase, ValidateTokenUseCase, R
         return claims.get("userId", Long.class);
     }
 
+    public String getRoleFromToken(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        return claims.get("role", String.class);
+    }
+
     @Override
     public String refreshToken(String refreshToken) {
         try {
@@ -106,8 +117,12 @@ public class JWTService implements GenerateTokenUseCase, ValidateTokenUseCase, R
 
             String email = claims.getSubject();
             Long userId = claims.get("userId", Long.class);
+            String role = claims.get("role", String.class);
+            if (role == null) {
+                role = "USER";
+            }
 
-            return generateToken(email, userId);
+            return generateToken(email, userId, role);
         } catch (JwtException e) {
             if (e.getMessage().contains("Expired")) {
                 throw new TokenExpiredException("Refresh token has expired");

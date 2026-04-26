@@ -29,7 +29,7 @@ class JWTServiceTest {
         String email = "test@example.com";
         Long userId = 1L;
 
-        String token = jwtService.generateToken(email, userId);
+        String token = jwtService.generateToken(email, userId, "USER");
 
         assertNotNull(token);
         assertFalse(token.isEmpty());
@@ -40,7 +40,7 @@ class JWTServiceTest {
         String email = "test@example.com";
         Long userId = 1L;
 
-        String refreshToken = jwtService.generateRefreshToken(email, userId);
+        String refreshToken = jwtService.generateRefreshToken(email, userId, "USER");
 
         assertNotNull(refreshToken);
         assertFalse(refreshToken.isEmpty());
@@ -50,7 +50,7 @@ class JWTServiceTest {
     void shouldValidateValidToken() {
         String email = "test@example.com";
         Long userId = 1L;
-        String token = jwtService.generateToken(email, userId);
+        String token = jwtService.generateToken(email, userId, "USER");
 
         boolean isValid = jwtService.validateToken(token);
 
@@ -70,7 +70,7 @@ class JWTServiceTest {
     void shouldExtractEmailFromToken() {
         String email = "test@example.com";
         Long userId = 1L;
-        String token = jwtService.generateToken(email, userId);
+        String token = jwtService.generateToken(email, userId, "USER");
 
         String extractedEmail = jwtService.getEmailFromToken(token);
 
@@ -81,7 +81,7 @@ class JWTServiceTest {
     void shouldExtractUserIdFromToken() {
         String email = "test@example.com";
         Long userId = 1L;
-        String token = jwtService.generateToken(email, userId);
+        String token = jwtService.generateToken(email, userId, "USER");
 
         Long extractedUserId = jwtService.getUserIdFromToken(token);
 
@@ -92,7 +92,7 @@ class JWTServiceTest {
     void shouldValidateRefreshToken() {
         String email = "test@example.com";
         Long userId = 1L;
-        String refreshToken = jwtService.generateRefreshToken(email, userId);
+        String refreshToken = jwtService.generateRefreshToken(email, userId, "USER");
 
         boolean isValid = jwtService.validateRefreshToken(refreshToken);
 
@@ -103,7 +103,7 @@ class JWTServiceTest {
     void shouldInvalidateAccessTokenAsRefreshToken() {
         String email = "test@example.com";
         Long userId = 1L;
-        String accessToken = jwtService.generateToken(email, userId);
+        String accessToken = jwtService.generateToken(email, userId, "USER");
 
         boolean isValid = jwtService.validateRefreshToken(accessToken);
 
@@ -114,7 +114,7 @@ class JWTServiceTest {
     void shouldRefreshTokenSuccessfully() {
         String email = "test@example.com";
         Long userId = 1L;
-        String refreshToken = jwtService.generateRefreshToken(email, userId);
+        String refreshToken = jwtService.generateRefreshToken(email, userId, "USER");
 
         String newAccessToken = jwtService.refreshToken(refreshToken);
 

@@ -2,6 +2,7 @@ package com.example.ecommerce.order.infrastructure.adapter.out.persistence;
 
 import com.example.ecommerce.order.application.port.out.OrderRepositoryPort;
 import com.example.ecommerce.order.domain.model.Order;
+import com.example.ecommerce.order.domain.model.OrderStatus;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Repository;
 
@@ -42,6 +43,20 @@ public class OrderPersistenceAdapter implements OrderRepositoryPort {
     public List<Order> findByUserId(Long userId) {
         return orderJpaRepository.findAll().stream()
                 .filter(entity -> entity.getUserId().equals(userId))
+                .map(OrderEntity::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Order> findAll() {
+        return orderJpaRepository.findAll().stream()
+                .map(OrderEntity::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Order> findByStatus(OrderStatus status) {
+        return orderJpaRepository.findByStatus(status).stream()
                 .map(OrderEntity::toDomain)
                 .toList();
     }

@@ -97,8 +97,8 @@ class UserServiceTest {
 
         when(userRepositoryPort.findByEmail(email)).thenReturn(Optional.of(user));
         when(passwordEncoderPort.matches(rawPassword, encodedPassword)).thenReturn(true);
-        when(jwtProviderPort.generateToken(email, 1L)).thenReturn(accessToken);
-        when(jwtProviderPort.generateRefreshToken(email, 1L)).thenReturn(refreshToken);
+        when(jwtProviderPort.generateToken(email, 1L, "USER")).thenReturn(accessToken);
+        when(jwtProviderPort.generateRefreshToken(email, 1L, "USER")).thenReturn(refreshToken);
 
         // Act
         AuthenticateUserUseCase.TokenPair tokenPair = userService.authenticate(email, rawPassword);

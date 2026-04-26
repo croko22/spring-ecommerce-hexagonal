@@ -14,13 +14,13 @@ public class JWTProvider implements JWTProviderPort {
     }
 
     @Override
-    public String generateToken(String email, Long userId) {
-        return jwtService.generateToken(email, userId);
+    public String generateToken(String email, Long userId, String role) {
+        return jwtService.generateToken(email, userId, role);
     }
 
     @Override
-    public String generateRefreshToken(String email, Long userId) {
-        return jwtService.generateRefreshToken(email, userId);
+    public String generateRefreshToken(String email, Long userId, String role) {
+        return jwtService.generateRefreshToken(email, userId, role);
     }
 
     @Override
@@ -36,6 +36,11 @@ public class JWTProvider implements JWTProviderPort {
     @Override
     public Long getUserIdFromToken(String token) {
         return jwtService.getUserIdFromToken(token);
+    }
+
+    @Override
+    public String getRoleFromToken(String token) {
+        return jwtService.getRoleFromToken(token);
     }
 
     @Override

@@ -1,6 +1,9 @@
 package com.example.ecommerce.user.infrastructure.adapter.out.persistence;
 
+import com.example.ecommerce.user.domain.model.UserRole;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -17,12 +20,16 @@ public class UserEntity {
     private String email;
     private String password;
 
+    @Enumerated(EnumType.STRING)
+    private UserRole role;
+
     public UserEntity() {}
 
-    public UserEntity(Long id, String email, String password) {
+    public UserEntity(Long id, String email, String password, UserRole role) {
         this.id = id;
         this.email = email;
         this.password = password;
+        this.role = role != null ? role : UserRole.USER;
     }
 
     public Long getId() { return id; }
@@ -31,4 +38,6 @@ public class UserEntity {
     public void setEmail(String email) { this.email = email; }
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
+    public UserRole getRole() { return role; }
+    public void setRole(UserRole role) { this.role = role; }
 }

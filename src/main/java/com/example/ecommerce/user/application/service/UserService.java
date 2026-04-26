@@ -49,9 +49,9 @@ public class UserService implements RegisterUserUseCase, AuthenticateUserUseCase
             throw new AuthenticationException("Invalid email or password");
         }
         
-        String accessToken = jwtProviderPort.generateToken(email, user.getId());
-        String refreshToken = jwtProviderPort.generateRefreshToken(email, user.getId());
-        
+        String accessToken = jwtProviderPort.generateToken(email, user.getId(), user.getRole().name());
+        String refreshToken = jwtProviderPort.generateRefreshToken(email, user.getId(), user.getRole().name());
+
         return new TokenPair(accessToken, refreshToken, jwtExpiration);
     }
 }
