@@ -2,11 +2,15 @@ package com.example.ecommerce.user.infrastructure.adapter.in.web;
 
 import com.example.ecommerce.user.application.port.in.AuthenticateUserUseCase;
 import com.example.ecommerce.user.application.port.in.RegisterUserUseCase;
+import com.example.ecommerce.user.application.port.in.RequestPasswordResetUseCase;
+import com.example.ecommerce.user.application.port.in.ResetPasswordUseCase;
 import com.example.ecommerce.user.application.service.JWTService;
 import com.example.ecommerce.user.domain.model.User;
 import com.example.ecommerce.user.infrastructure.adapter.in.web.dto.AuthResponse;
 import com.example.ecommerce.user.infrastructure.adapter.in.web.dto.LoginRequest;
+import com.example.ecommerce.user.infrastructure.adapter.in.web.dto.PasswordResetRequest;
 import com.example.ecommerce.user.infrastructure.adapter.in.web.dto.RefreshTokenRequest;
+import com.example.ecommerce.user.infrastructure.adapter.in.web.dto.ResetPasswordRequest;
 import com.example.ecommerce.user.infrastructure.adapter.in.web.dto.UserProfileResponse;
 import com.example.ecommerce.user.infrastructure.adapter.in.web.dto.UserRegistrationRequest;
 import com.example.ecommerce.user.infrastructure.adapter.in.web.dto.UserResponse;
@@ -26,13 +30,19 @@ public class UserController {
 
     private final RegisterUserUseCase registerUserUseCase;
     private final AuthenticateUserUseCase authenticateUserUseCase;
+    private final RequestPasswordResetUseCase requestPasswordResetUseCase;
+    private final ResetPasswordUseCase resetPasswordUseCase;
     private final JWTService jwtService;
 
-    public UserController(RegisterUserUseCase registerUserUseCase, 
-                         AuthenticateUserUseCase authenticateUserUseCase,
-                         JWTService jwtService) {
+    public UserController(RegisterUserUseCase registerUserUseCase,
+                          AuthenticateUserUseCase authenticateUserUseCase,
+                          RequestPasswordResetUseCase requestPasswordResetUseCase,
+                          ResetPasswordUseCase resetPasswordUseCase,
+                          JWTService jwtService) {
         this.registerUserUseCase = registerUserUseCase;
         this.authenticateUserUseCase = authenticateUserUseCase;
+        this.requestPasswordResetUseCase = requestPasswordResetUseCase;
+        this.resetPasswordUseCase = resetPasswordUseCase;
         this.jwtService = jwtService;
     }
 
@@ -70,5 +80,17 @@ public class UserController {
                 "USER"
         );
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> forgotPassword(@RequestBody PasswordResetRequest request) {
+        requestPasswordResetUseCase.requestPasswordReset(request.getEmail());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@RequestBody ResetPasswordRequest request) {
+        resetPasswordUseCase.resetPassword(request.getToken(), request.getNewPassword());
+        return ResponseEntity.ok().build();
     }
 }

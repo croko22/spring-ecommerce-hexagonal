@@ -1,5 +1,6 @@
 package com.example.ecommerce.user.application.service;
 
+import com.example.ecommerce.notification.application.port.in.SendNotificationUseCase;
 import com.example.ecommerce.user.application.port.in.AuthenticateUserUseCase;
 import com.example.ecommerce.user.application.port.out.JWTProviderPort;
 import com.example.ecommerce.user.application.port.out.PasswordEncoderPort;
@@ -32,11 +33,14 @@ class UserServiceTest {
     @Mock
     private JWTProviderPort jwtProviderPort;
 
+    @Mock
+    private SendNotificationUseCase sendNotificationUseCase;
+
     private UserService userService;
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userRepositoryPort, passwordEncoderPort, jwtProviderPort);
+        userService = new UserService(userRepositoryPort, passwordEncoderPort, jwtProviderPort, sendNotificationUseCase);
         ReflectionTestUtils.setField(userService, "jwtExpiration", 86400000L);
     }
 

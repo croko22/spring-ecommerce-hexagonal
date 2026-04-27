@@ -19,26 +19,45 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
     @Override
     public User save(User user) {
         UserEntity entity = new UserEntity(user.getId(), user.getEmail(), user.getPassword(), user.getRole());
+        entity.setResetToken(user.getResetToken());
+        entity.setResetTokenExpiry(user.getResetTokenExpiry());
         UserEntity savedEntity = jpaUserRepository.save(entity);
-        return new User(savedEntity.getId(), savedEntity.getEmail(), savedEntity.getPassword(), savedEntity.getRole());
+        return toDomain(savedEntity);
     }
 
     @Override
     public Optional<User> findByEmail(String email) {
         return jpaUserRepository.findByEmail(email)
-                .map(entity -> new User(entity.getId(), entity.getEmail(), entity.getPassword(), entity.getRole()));
+                .map(this::toDomain);
     }
 
     @Override
     public Optional<User> findById(Long id) {
         return jpaUserRepository.findById(id)
-                .map(entity -> new User(entity.getId(), entity.getEmail(), entity.getPassword(), entity.getRole()));
+                .map(this::toDomain);
     }
 
     @Override
     public List<User> findAll() {
         return jpaUserRepository.findAll().stream()
-                .map(entity -> new User(entity.getId(), entity.getEmail(), entity.getPassword(), entity.getRole()))
+                .map(this::toDomain)
                 .toList();
+    }
+
+    @Override
+    public Optional<User> findByResetToken(String resetToken) {
+        return jpaUserRepository.findByResetToken(resetToken)
+                .map(this::toDomain);
+    }
+
+    private User toDomain(UserEntity entity) {
+        return new User(
+                entity.getId(),
+                entity.getEmail(),
+                entity.getPassword(),
+                entity.getRole(),
+                entity.getResetToken(),
+                entity.getResetTokenExpiry()
+        );
     }
 }

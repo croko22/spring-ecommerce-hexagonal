@@ -9,4 +9,5 @@ public interface UserRepositoryPort {
     Optional<User> findByEmail(String email);
     Optional<User> findById(Long id);
     List<User> findAll();
+    Optional<User> findByResetToken(String resetToken);
 }

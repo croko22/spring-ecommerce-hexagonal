@@ -3,6 +3,8 @@ package com.example.ecommerce.user.infrastructure.adapter.in.web;
 import com.example.ecommerce.user.application.port.in.AuthenticateUserUseCase;
 import com.example.ecommerce.user.application.port.in.RefreshTokenUseCase;
 import com.example.ecommerce.user.application.port.in.RegisterUserUseCase;
+import com.example.ecommerce.user.application.port.in.RequestPasswordResetUseCase;
+import com.example.ecommerce.user.application.port.in.ResetPasswordUseCase;
 import com.example.ecommerce.user.domain.model.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +34,12 @@ class UserControllerTest {
 
     @Mock
     private RefreshTokenUseCase refreshTokenUseCase;
+
+    @Mock
+    private RequestPasswordResetUseCase requestPasswordResetUseCase;
+
+    @Mock
+    private ResetPasswordUseCase resetPasswordUseCase;
 
     @InjectMocks
     private UserController userController;
