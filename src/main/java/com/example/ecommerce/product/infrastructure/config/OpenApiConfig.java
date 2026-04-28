@@ -1,7 +1,10 @@
 package com.example.ecommerce.product.infrastructure.config;
 
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -12,8 +15,14 @@ public class OpenApiConfig {
     public OpenAPI ecommerceOpenAPI() {
         return new OpenAPI()
             .info(new Info()
-                .title("E-commerce API")
-                .description("E-commerce REST API with Clean Architecture")
-                .version("1.0.0"));
+                .title("Ecommerce API")
+                .description("Backend del ecommerce hexagonal")
+                .version("1.0"))
+            .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
+            .components(new Components()
+                .addSecuritySchemes("bearerAuth", new SecurityScheme()
+                    .type(SecurityScheme.Type.HTTP)
+                    .scheme("bearer")
+                    .bearerFormat("JWT")));
     }
 }

@@ -20,7 +20,12 @@ import com.example.ecommerce.payment.domain.model.IdempotencyKey;
 import com.example.ecommerce.payment.domain.model.Payment;
 import com.example.ecommerce.payment.domain.model.PaymentOperation;
 import com.example.ecommerce.payment.domain.model.ProviderReference;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.CompletableFuture;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -100,7 +105,7 @@ public class PaymentService implements InitiatePaymentUseCase, GetPaymentUseCase
         );
         payment = paymentRepositoryPort.save(payment);
 
-        PaymentProviderPort.ProviderAuthorizeCaptureResult providerResult = paymentProviderPort.authorizeAndCapture(
+        PaymentProviderPort.ProviderAuthorizeCaptureResult providerResult = authorizeAndCaptureWithResilience(
                 orderSnapshot.orderId(),
                 principalUserId,
                 command.paymentMethodToken()
@@ -262,5 +267,26 @@ public class PaymentService implements InitiatePaymentUseCase, GetPaymentUseCase
             throw new IllegalArgumentException("Field '" + fieldName + "' is required");
         }
         return value;
+    }
+
+    @Retry(name = "backend")
+    @CircuitBreaker(name = "backend")
+    @TimeLimiter(name = "backend")
+    public CompletableFuture<PaymentProviderPort.ProviderAuthorizeCaptureResult> authorizeAndCaptureWithResilienceAsync(
+            Long orderId, Long userId, String paymentMethodToken) {
+        return CompletableFuture.completedFuture(
+                paymentProviderPort.authorizeAndCapture(orderId, userId, paymentMethodToken));
+    }
+
+    private PaymentProviderPort.ProviderAuthorizeCaptureResult authorizeAndCaptureWithResilience(
+            Long orderId, Long userId, String paymentMethodToken) {
+        try {
+            return authorizeAndCaptureWithResilienceAsync(orderId, userId, paymentMethodToken).join();
+        } catch (Exception e) {
+            if (e.getCause() instanceof RuntimeException re) {
+                throw re;
+            }
+            throw new RuntimeException("Payment provider call failed after retries", e);
+        }
     }
 }
