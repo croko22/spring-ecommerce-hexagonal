@@ -5,6 +5,8 @@ import com.example.ecommerce.notification.application.port.out.EmailSenderPort;
 import com.example.ecommerce.notification.application.port.out.NotificationRepositoryPort;
 import com.example.ecommerce.notification.domain.model.Notification;
 import com.example.ecommerce.notification.domain.model.NotificationType;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.beans.factory.annotation.Value;
 
 public class NotificationService implements SendNotificationUseCase {
@@ -50,6 +52,8 @@ public class NotificationService implements SendNotificationUseCase {
     }
 
     @Override
+    @Retry(name = "backend")
+    @CircuitBreaker(name = "backend")
     public Notification sendNotification(Long userId, String recipientEmail, NotificationType type,
                                          String subject, String body) {
         Notification notification = new Notification(
@@ -71,7 +75,6 @@ public class NotificationService implements SendNotificationUseCase {
             saved.markAsSent();
             return notificationRepositoryPort.save(saved);
         } catch (Exception e) {
-            // Email failed but notification is saved as pending
             return saved;
         }
     }
