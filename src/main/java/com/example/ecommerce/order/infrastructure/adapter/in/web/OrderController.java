@@ -45,13 +45,17 @@ public class OrderController {
     public ResponseEntity<OrderResponse> createOrder(
             @RequestHeader("X-User-Id") Long userId,
             @RequestBody CreateOrderRequest request) {
+        
+        // Map frontend request to domain command
+        CreateOrderRequest.ShippingAddressRequest shipping = request.getShipping();
         CreateOrderUseCase.CreateOrderCommand command = new CreateOrderUseCase.CreateOrderCommand(
-                request.getStreet(),
-                request.getCity(),
-                request.getState(),
-                request.getZipCode(),
-                request.getCountry()
+                shipping != null ? shipping.getAddress() : null,
+                shipping != null ? shipping.getRegion() : null,
+                shipping != null ? shipping.getDocumentType() : null,
+                shipping != null ? shipping.getDocumentNumber() : null,
+                shipping != null ? shipping.getRegion() : null
         );
+        
         Order order = createOrderUseCase.createOrder(userId, command);
 
         userRepositoryPort.findById(userId).ifPresent(user ->
