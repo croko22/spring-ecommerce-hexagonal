@@ -53,7 +53,8 @@ public class OrderController {
                 shipping != null ? shipping.getRegion() : null,
                 shipping != null ? shipping.getDocumentType() : null,
                 shipping != null ? shipping.getDocumentNumber() : null,
-                shipping != null ? shipping.getRegion() : null
+                shipping != null ? shipping.getRegion() : null,
+                request.getDiscountCode()
         );
         
         Order order = createOrderUseCase.createOrder(userId, command);

@@ -74,7 +74,8 @@ class OrderServiceTest {
                 "City",
                 "State",
                 "12345",
-                "Country"
+                "Country",
+                null
         );
 
         Order result = orderService.createOrder(1L, command);
@@ -97,7 +98,8 @@ class OrderServiceTest {
                 "City",
                 "State",
                 "12345",
-                "Country"
+                "Country",
+                null
         );
 
         assertThrows(IllegalArgumentException.class, () -> orderService.createOrder(1L, command));

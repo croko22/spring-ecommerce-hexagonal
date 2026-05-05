@@ -11,6 +11,7 @@ public interface CreateOrderUseCase {
         String city,
         String state,
         String zipCode,
-        String country
+        String country,
+        String discountCode
     ) {}
 }
