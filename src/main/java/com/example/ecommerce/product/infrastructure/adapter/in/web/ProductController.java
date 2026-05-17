@@ -55,8 +55,15 @@ public class ProductController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get a product by ID", description = "Returns a single product")
-    public Product getProduct(@PathVariable Long id) {
-        return getProductUseCase.getProductById(id);
+    public Product getProduct(@PathVariable String id) {
+        return getProductUseCase.getProductById(parseId(id));
+    }
+
+    private Long parseId(String id) {
+        if (id != null && id.startsWith("p-")) {
+            return Long.parseLong(id.substring(2));
+        }
+        return Long.parseLong(id);
     }
 
     @GetMapping
@@ -75,38 +82,40 @@ public class ProductController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update a product", description = "Updates an existing product")
-    public Product updateProduct(@PathVariable Long id, @RequestBody ProductRequest productRequest) {
-        Product product = new Product(id, productRequest.getName(), productRequest.getDescription(),
+    public Product updateProduct(@PathVariable String id, @RequestBody ProductRequest productRequest) {
+        Long parsedId = parseId(id);
+        Product product = new Product(parsedId, productRequest.getName(), productRequest.getDescription(),
                 productRequest.getPrice(), productRequest.getStock(), productRequest.getImageUrl(),
                 productRequest.getSku(), productRequest.getCategoryId());
         product.setLowStockThreshold(productRequest.getLowStockThreshold());
-        return updateProductUseCase.updateProduct(id, product);
+        return updateProductUseCase.updateProduct(parsedId, product);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete a product", description = "Deletes a product by ID")
-    public void deleteProduct(@PathVariable Long id) {
-        deleteProductUseCase.deleteProduct(id);
+    public void deleteProduct(@PathVariable String id) {
+        deleteProductUseCase.deleteProduct(parseId(id));
     }
 
     // ========== Stock management endpoints ==========
 
     @PostMapping("/{id}/stock/adjust")
     @Operation(summary = "Adjust product stock", description = "Adjusts stock by a delta amount (positive or negative)")
-    public Product adjustStock(@PathVariable Long id, @RequestBody StockAdjustRequest request) {
-        productService.adjustStock(id, request.getQuantity(), request.getReason());
-        return getProductUseCase.getProductById(id);
+    public Product adjustStock(@PathVariable String id, @RequestBody StockAdjustRequest request) {
+        Long parsedId = parseId(id);
+        productService.adjustStock(parsedId, request.getQuantity(), request.getReason());
+        return getProductUseCase.getProductById(parsedId);
     }
 
     @GetMapping("/{id}/stock/history")
     @Operation(summary = "Get stock history", description = "Returns stock change history for a product")
     public Page<StockHistory> getStockHistory(
-            @PathVariable Long id,
+            @PathVariable String id,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return productService.getStockHistory(id, pageable);
+        return productService.getStockHistory(parseId(id), pageable);
     }
 
     @GetMapping("/low-stock")

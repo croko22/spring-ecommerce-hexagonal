@@ -61,12 +61,19 @@ public class AdminController {
 
     @GetMapping("/products/{id}")
     @Operation(summary = "Admin get product by ID")
-    public ResponseEntity<ProductResponse> getProduct(@PathVariable Long id) {
-        Product product = adminService.getProductById(id);
+    public ResponseEntity<ProductResponse> getProduct(@PathVariable String id) {
+        Product product = adminService.getProductById(parseId(id));
         ProductResponse response = new ProductResponse(product.getId(), product.getName(),
                 product.getDescription(), product.getPrice(), product.getStock(),
                 product.getImageUrl(), product.getSku(), product.getCategoryId());
         return ResponseEntity.ok(response);
+    }
+
+    private Long parseId(String id) {
+        if (id != null && id.startsWith("p-")) {
+            return Long.parseLong(id.substring(2));
+        }
+        return Long.parseLong(id);
     }
 
     @PostMapping("/products")
@@ -84,11 +91,12 @@ public class AdminController {
 
     @PutMapping("/products/{id}")
     @Operation(summary = "Admin update product")
-    public ProductResponse updateProduct(@PathVariable Long id, @RequestBody ProductRequest productRequest) {
-        Product product = new Product(id, productRequest.getName(), productRequest.getDescription(),
+    public ProductResponse updateProduct(@PathVariable String id, @RequestBody ProductRequest productRequest) {
+        Long parsedId = parseId(id);
+        Product product = new Product(parsedId, productRequest.getName(), productRequest.getDescription(),
                 productRequest.getPrice(), productRequest.getStock(), productRequest.getImageUrl(),
                 productRequest.getSku(), productRequest.getCategoryId());
-        Product updated = adminService.updateProduct(id, product);
+        Product updated = adminService.updateProduct(parsedId, product);
         return new ProductResponse(updated.getId(), updated.getName(), updated.getDescription(),
                 updated.getPrice(), updated.getStock(), updated.getImageUrl(), updated.getSku(),
                 updated.getCategoryId());
@@ -97,8 +105,8 @@ public class AdminController {
     @DeleteMapping("/products/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Admin delete product")
-    public void deleteProduct(@PathVariable Long id) {
-        adminService.deleteProduct(id);
+    public void deleteProduct(@PathVariable String id) {
+        adminService.deleteProduct(parseId(id));
     }
 
     @GetMapping("/orders")
